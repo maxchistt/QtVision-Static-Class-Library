@@ -5,6 +5,16 @@ VisualStudioVersion = 16.0.31515.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QtVision", "QtVision\QtVision.vcxproj", "{24FBAF90-E7BC-4DF9-892B-9882E21A1CD0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{A30BC6AE-ABCA-4FD2-B43D-CAABF7B2A618}"
+	ProjectSection(SolutionItems) = preProject
+		Shared\vsn_graphicssceneview.cpp = Shared\vsn_graphicssceneview.cpp
+		Shared\vsn_graphicssceneview.h = Shared\vsn_graphicssceneview.h
+		Shared\vsn_prcameramanipulate.cpp = Shared\vsn_prcameramanipulate.cpp
+		Shared\vsn_prcameramanipulate.h = Shared\vsn_prcameramanipulate.h
+		Shared\vsn_scenerepbuilder.cpp = Shared\vsn_scenerepbuilder.cpp
+		Shared\vsn_scenerepbuilder.h = Shared\vsn_scenerepbuilder.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
