@@ -9,6 +9,7 @@
 #ifndef __QT_VISIONDEF_H
 #define __QT_VISIONDEF_H
 
+#include "qtvision_global.h"
 #include <vsn_global.h>
 
 VSN_USE_NAMESPACE
