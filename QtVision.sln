@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{A30BC6
 		Shared\vsn_scenerepbuilder.h = Shared\vsn_scenerepbuilder.h
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Example", "Example\Example.vcxproj", "{6C103608-FC0E-44D0-8E25-4D62D1876BCB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -25,6 +27,10 @@ Global
 		{24FBAF90-E7BC-4DF9-892B-9882E21A1CD0}.Debug|x64.Build.0 = Debug|x64
 		{24FBAF90-E7BC-4DF9-892B-9882E21A1CD0}.Release|x64.ActiveCfg = Release|x64
 		{24FBAF90-E7BC-4DF9-892B-9882E21A1CD0}.Release|x64.Build.0 = Release|x64
+		{6C103608-FC0E-44D0-8E25-4D62D1876BCB}.Debug|x64.ActiveCfg = Debug|x64
+		{6C103608-FC0E-44D0-8E25-4D62D1876BCB}.Debug|x64.Build.0 = Debug|x64
+		{6C103608-FC0E-44D0-8E25-4D62D1876BCB}.Release|x64.ActiveCfg = Release|x64
+		{6C103608-FC0E-44D0-8E25-4D62D1876BCB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
