@@ -2,6 +2,6 @@
 
 #include <QtCore/qglobal.h>
 
-#ifdef BUILD_STATIC
+//#ifdef BUILD_STATIC
 # define QT_VISION_STATIC
-#endif
+//#endif
