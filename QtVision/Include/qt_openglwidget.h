@@ -188,6 +188,7 @@ QT_FUNC(void) setSurfaceFormat();
 QT_FUNC(bool) isExistLicense();
 QT_FUNC(bool) activateLicense();
 QT_FUNC(bool) checkLicense();
+QT_FUNC(bool) setLicense(QString key, QString sign);
 
 } // namespace QtVision
 

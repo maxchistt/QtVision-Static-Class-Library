@@ -884,5 +884,11 @@ QT_FUNC(bool) checkLicense()
     return QtVision::activateLicense();
 }
 
+QT_FUNC(bool) setLicense(QString key, QString sign) {
+    strKey = key.toStdString();
+    strSignature = sign.toStdString();
+    return QtVision::activateLicense();
+}
+
 } // namespace QtVision
 VSN_END_NAMESPACE
