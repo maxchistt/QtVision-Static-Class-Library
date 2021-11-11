@@ -46,8 +46,8 @@ Write-Output "End building Release"
 Write-Output "Start creating .zip distributive"
 If (Test-Path -Path $TempQtVisionExportPath ) { Remove-Item -Path $TempQtVisionExportPath -Recurse }
 If (Test-Path -Path $ZipPath ) { Remove-Item -Path $ZipPath -Recurse }
-Copy-Item .\x64\Debug -Filter *.lib -Recurse $($TempQtVisionExportPath + "\QtVision\Debug") -Force -Container:$false
-Copy-Item .\x64\Release -Filter *.lib -Recurse $($TempQtVisionExportPath + "\QtVision\Release") -Force -Container:$false
+Copy-Item .\x64\Debug -Filter QtVision.lib -Recurse $($TempQtVisionExportPath + "\QtVision\Debug") -Force -Container:$false
+Copy-Item .\x64\Release -Filter QtVision.lib -Recurse $($TempQtVisionExportPath + "\QtVision\Release") -Force -Container:$false
 Copy-Item .\QtVision\Include -Filter *.h -Recurse $($TempQtVisionExportPath + "\QtVision\Include") -Force -Container:$false
 Copy-Item .\Shared -Filter *.h -Recurse $($TempQtVisionExportPath + "\Shared") -Force -Container:$false
 Copy-Item .\Shared -Filter *.cpp -Recurse $($TempQtVisionExportPath + "\Shared") -Force -Container:$false
