@@ -20,9 +20,11 @@
 #include <tool_enabler.h>
 
 #include "qt_openglcontext.h"
-#include "lisencekey.h"
+#include <QDebug>
+#include <QInputDialog>
 
 #include <last.h>
+#include "lisencekey.h"
 
 VSN_BEGIN_NAMESPACE
 
@@ -850,6 +852,8 @@ QT_FUNC(bool) activateLicense()
 {
     std::string key = strKey;
     std::string signature = strSignature;
+    qDebug() << QString::fromStdString(key);
+    qDebug() << QString::fromStdString(signature);
 
     QProcessEnvironment procEnv = QProcessEnvironment::systemEnvironment();
     QString envKey = procEnv.value("C3DKey");
@@ -867,6 +871,17 @@ QT_FUNC(bool) activateLicense()
         return false;
     }
     return true;
+}
+
+QT_FUNC(bool) checkLicense()
+{
+    if (!QtVision::isExistLicense()) {
+        QString k = QInputDialog::getText(Q_NULLPTR, QString("License"), QString("Add key:"));
+        strKey = k.toStdString();
+        QString s = QInputDialog::getText(Q_NULLPTR, QString("License"), QString("Add signature:"));
+        strSignature = s.toStdString();
+    }
+    return QtVision::activateLicense();
 }
 
 } // namespace QtVision

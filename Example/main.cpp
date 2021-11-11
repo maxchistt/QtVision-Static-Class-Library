@@ -26,7 +26,8 @@ int main(int argc, char* argv[])
 #endif
 
 	QApplication app(argc, argv);
-	//if (!QtVision::activateLicense())return 0;
+
+	if (!QtVision::checkLicense())return 0;
 	Application vapp;
 	app.setApplicationName("Basics geometries");
 	app.setOrganizationName("C3DLabs");
