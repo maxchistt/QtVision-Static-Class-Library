@@ -48,11 +48,14 @@ If (Test-Path -Path $TempQtVisionExportPath ) { Remove-Item -Path $TempQtVisionE
 If (Test-Path -Path $ZipPath ) { Remove-Item -Path $ZipPath -Recurse }
 Copy-Item .\x64\Debug -Filter QtVision.lib -Recurse $($TempQtVisionExportPath + "\QtVision\Debug") -Force -Container:$false
 Copy-Item .\x64\Release -Filter QtVision.lib -Recurse $($TempQtVisionExportPath + "\QtVision\Release") -Force -Container:$false
+Copy-Item .\QtVision -Filter *.h $($TempQtVisionExportPath + "\QtVision\Include") -Force -Container:$false
 Copy-Item .\QtVision\Include -Filter *.h -Recurse $($TempQtVisionExportPath + "\QtVision\Include") -Force -Container:$false
 Copy-Item .\Shared -Filter *.h -Recurse $($TempQtVisionExportPath + "\Shared") -Force -Container:$false
 Copy-Item .\Shared -Filter *.cpp -Recurse $($TempQtVisionExportPath + "\Shared") -Force -Container:$false
 Compress-Archive -Path $($TempQtVisionExportPath + "\QtVision") -DestinationPath $ZipPath -CompressionLevel Optimal -Update
 Compress-Archive -Path $($TempQtVisionExportPath + "\Shared") -DestinationPath $ZipPath -CompressionLevel Optimal -Update
+Compress-Archive -Path ".\C3D\Kernel" -DestinationPath $ZipPath -CompressionLevel Optimal -Update
+Compress-Archive -Path ".\C3D\Vision" -DestinationPath $ZipPath -CompressionLevel Optimal -Update
 Remove-Item $TempQtVisionExportPath -Recurse
 Write-Output "End creating .zip distributive"
 
