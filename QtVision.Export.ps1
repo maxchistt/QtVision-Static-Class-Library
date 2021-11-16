@@ -18,8 +18,8 @@ $TempDir = [System.IO.Path]::GetTempPath()
 $TempQtVisionExportPath = "$TempDir\QtVision-Ex-Temp"
 $ZipPath = "..\QtVision.zip"
 $DevEnv = Get-DevEnvExecutableFilePath
-$BuildDebugArgs = ".\QtVision.sln /build Debug"
-$BuildReleaseArgs = ".\QtVision.sln /build Release"
+$BuildDebugArgs = ".\QtVision.sln /rebuild Debug /project QtVision"
+$BuildReleaseArgs = ".\QtVision.sln /rebuild Release /project QtVision"
 
 $noKernel = 0
 $noVision = 0
