@@ -187,8 +187,8 @@ QT_FUNC(void) setSurfaceFormat();
 /// \ru This is method is deprecated, use ActivateLicense
 QT_FUNC(bool) isExistLicense();
 QT_FUNC(bool) activateLicense();
-QT_FUNC(bool) checkLicense();
-QT_FUNC(bool) setLicense(QString key, QString sign);
+QT_FUNC(bool) checkLicenseWithInput();
+QT_FUNC(bool) setLicenseKeyValues(QString key, QString sign);
 
 } // namespace QtVision
 

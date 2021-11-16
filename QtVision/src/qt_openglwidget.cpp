@@ -873,7 +873,7 @@ QT_FUNC(bool) activateLicense()
     return true;
 }
 
-QT_FUNC(bool) checkLicense()
+QT_FUNC(bool) checkLicenseWithInput()
 {
     if (!QtVision::isExistLicense()) {
         QString k = QInputDialog::getText(Q_NULLPTR, QString("License"), QString("Add key:"));
@@ -884,7 +884,7 @@ QT_FUNC(bool) checkLicense()
     return QtVision::activateLicense();
 }
 
-QT_FUNC(bool) setLicense(QString key, QString sign) {
+QT_FUNC(bool) setLicenseKeyValues(QString key, QString sign) {
     strKey = key.toStdString();
     strSignature = sign.toStdString();
     return QtVision::activateLicense();
