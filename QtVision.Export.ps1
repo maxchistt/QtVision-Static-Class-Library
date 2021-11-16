@@ -54,8 +54,8 @@ Copy-Item .\Shared -Filter *.h -Recurse $($TempQtVisionExportPath + "\Shared") -
 Copy-Item .\Shared -Filter *.cpp -Recurse $($TempQtVisionExportPath + "\Shared") -Force -Container:$false
 Compress-Archive -Path $($TempQtVisionExportPath + "\QtVision") -DestinationPath $ZipPath -CompressionLevel Optimal -Update
 Compress-Archive -Path $($TempQtVisionExportPath + "\Shared") -DestinationPath $ZipPath -CompressionLevel Optimal -Update
-Compress-Archive -Path ".\C3D\Kernel" -DestinationPath $ZipPath -CompressionLevel Optimal -Update
-Compress-Archive -Path ".\C3D\Vision" -DestinationPath $ZipPath -CompressionLevel Optimal -Update
+#Compress-Archive -Path ".\C3D\Kernel" -DestinationPath $ZipPath -CompressionLevel Optimal -Update
+#Compress-Archive -Path ".\C3D\Vision" -DestinationPath $ZipPath -CompressionLevel Optimal -Update
 Remove-Item $TempQtVisionExportPath -Recurse
 Write-Output "End creating .zip distributive"
 
