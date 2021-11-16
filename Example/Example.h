@@ -19,7 +19,10 @@ public:
 	Example(QWidget* parent = Q_NULLPTR);
 
 private:
-	QtVision::QtOpenGLSceneWidget* glWidget;
+	QtVision::QtOpenGLSceneWidget* glWidget = Q_NULLPTR;
 	Ui::ExampleClass ui;
-	void makeTestScene();
+	void setupWindowSize();
+	void prepareTestScene();
+private slots:
+	void makeTestSceneSlot();
 };

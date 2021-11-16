@@ -12,18 +12,19 @@ Example::Example(QWidget* parent)
 	: QMainWindow(parent)
 {
 	ui.setupUi(this);
-
+	setupWindowSize();
 	QtVision::setSurfaceFormat();
+
 	glWidget = new QtVision::QtOpenGLSceneWidget(this);
 	setCentralWidget(glWidget);
-	makeTestScene();
+
+	prepareTestScene();
+
+	connect(ui.draw_Action, &QAction::triggered, this, &Example::makeTestSceneSlot);
 }
 
-void Example::makeTestScene()
+void Example::makeTestSceneSlot()
 {
-	glWidget->mainLight()->SetDoubleSided(true);
-	glWidget->viewport()->SetBackgroundColour(Color(74, 74, 74));
-
 	SceneSegment* pTopSegment = glWidget->sceneContent()->GetRootSegment();
 	Q_ASSERT(pTopSegment != nullptr);
 
@@ -48,8 +49,16 @@ void Example::makeTestScene()
 	glWidget->sceneContent()->GetContainer()->SetUseVertexBufferObjects(true);
 	QtVision::createProcessesCameraControls(glWidget->graphicsEngine()->GetTopEssence());
 	glWidget->viewport()->ZoomToFit(glWidget->sceneContent()->GetBoundingBox());
+}
 
-	glWidget->move(QPoint(200, 200));
+void Example::setupWindowSize()
+{
 	QRect geom = QApplication::desktop()->availableGeometry();
-	glWidget->resize(2 * geom.width() / 3, 2 * geom.height() / 3);
+	this->resize(2 * geom.width() / 3, 2 * geom.height() / 3);
+}
+
+void Example::prepareTestScene()
+{
+	glWidget->mainLight()->SetDoubleSided(true);
+	glWidget->viewport()->SetBackgroundColour(Color(74, 74, 74));
 }
