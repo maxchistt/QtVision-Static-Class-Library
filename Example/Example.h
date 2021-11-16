@@ -3,13 +3,23 @@
 #include <QtWidgets/QMainWindow>
 #include "ui_Example.h"
 
+#include <qt_openglwidget.h>
+#include <vsn_geomsamples.h>
+#include <mesh_triangle.h>
+#include <mesh.h>
+#include <vsn_labelgeometry.h>
+
+VSN_USE_NAMESPACE
+
 class Example : public QMainWindow
 {
-    Q_OBJECT
+	Q_OBJECT
 
 public:
-    Example(QWidget *parent = Q_NULLPTR);
+	Example(QWidget* parent = Q_NULLPTR);
 
 private:
-    Ui::ExampleClass ui;
+	QtVision::QtOpenGLSceneWidget* glWidget;
+	Ui::ExampleClass ui;
+	void makeTestScene();
 };
