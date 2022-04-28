@@ -1,4 +1,4 @@
-﻿#include "qt_openglwidgetprivate.h"
+﻿#include <qt_openglwidgetprivate.h>
 #include <QApplication>
 #include <QScreen>
 #include <QWindow>
@@ -11,31 +11,38 @@
 #include <QtGui/QOpenGLPaintDevice>
 #include <QtGui/QOpenGLFramebufferObject>
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#include <QScreen>
+#else
+#include <QDesktopWidget>
+#endif
+
 #include <vsn_window.h>
 #include <vsn_openglfbo.h>
 #include <vsn_graphicsview.h>
+#include <vsn_renderstatistics.h>
 #include <vsn_graphicssceneengine.h>
 #include <vsn_graphicsscene.h>
 #include <vsn_texture2d.h>
 #include <tool_enabler.h>
 
-#include "qt_openglcontext.h"
-#include <QDebug>
-#include <QInputDialog>
+#include <qt_aboutscenewidget.h>
+#include <qt_openglcontext.h>
+#include <qt_licensewnd.h>
 
 #include <last.h>
-#include "lisencekey.h"
 
 VSN_BEGIN_NAMESPACE
 
 namespace QtVision {
 
 /* QtConverterEventListener */
-QtConverterEventListener::QtConverterEventListener(QObject* pParent)
+QtConverterEventListener::QtConverterEventListener(QObject* pParent, GraphicsScene* pListenerEvent)
     : QObject(pParent)
-    , m_pListenerEvent(nullptr)
+    , m_pListenerEvent(pListenerEvent)
     , m_idleTimerId(-1)
 {
+    Q_ASSERT(m_pListenerEvent != nullptr);
     parent()->installEventFilter(this);
 #ifndef VSN_OS_WIN
     m_idleTimerId = startTimer(QGuiApplication::primaryScreen()->refreshRate());
@@ -51,17 +58,9 @@ QtConverterEventListener::~QtConverterEventListener()
 }
 
 //-----------------------------------------------------------------------------
-// Установить слушателя событий
-// ---
-void QtConverterEventListener::setListenerEvent(Object* pListenerEvent)
-{
-    m_pListenerEvent = pListenerEvent;
-}
-
-//-----------------------------------------------------------------------------
 //
 // ---
-bool QtConverterEventListener::keyPressEvent(QKeyEvent* event, QObject* watched)
+bool QtConverterEventListener::keyPressEvent(QKeyEvent* event)
 {
     KeyEvent processEvent(ProcessEvent::KeyDown, event->key(), event->nativeScanCode(), event->nativeVirtualKey(), event->nativeModifiers());
     BaseApplication::GetInstance()->OnProcessSendEvent(m_pListenerEvent, &processEvent);
@@ -71,7 +70,7 @@ bool QtConverterEventListener::keyPressEvent(QKeyEvent* event, QObject* watched)
 //-----------------------------------------------------------------------------
 //
 // ---
-bool QtConverterEventListener::keyReleaseEvent(QKeyEvent* event, QObject* watched)
+bool QtConverterEventListener::keyReleaseEvent(QKeyEvent* event)
 {
     KeyEvent processEvent(ProcessEvent::KeyUp, event->key(), event->nativeScanCode(), event->nativeVirtualKey(), event->nativeModifiers());
     BaseApplication::GetInstance()->OnProcessSendEvent(m_pListenerEvent, &processEvent);
@@ -81,11 +80,11 @@ bool QtConverterEventListener::keyReleaseEvent(QKeyEvent* event, QObject* watche
 //-----------------------------------------------------------------------------
 //
 // ---
-bool QtConverterEventListener::mouseHoverEvent(QHoverEvent* event, QObject* watched)
+bool QtConverterEventListener::mouseHoverEvent(QHoverEvent* event)
 {
     Q_ASSERT(m_pListenerEvent != nullptr);
     int flags = 0;
-    HoverEvent processEvent(ProcessEvent::HoverMove, IntPoint(event->posF().x(), event->posF().y()), IntPoint());
+    HoverEvent processEvent(ProcessEvent::HoverMove, PointI(event->posF().x(), event->posF().y()), PointI());
     processEvent.SetFlags(flags);
     BaseApplication::GetInstance()->OnProcessSendEvent(m_pListenerEvent, &processEvent);
     return false;
@@ -109,35 +108,34 @@ static int mapModifiers(Qt::KeyboardModifiers state)
 //-----------------------------------------------------------------------------
 //
 // ---
-bool QtConverterEventListener::mousePressEvent(QMouseEvent* event, QObject* watched)
+bool QtConverterEventListener::mousePressEvent(QMouseEvent* event)
 {
     Q_ASSERT(m_pListenerEvent != nullptr);
     ProcessEvent::EventType type = ProcessEvent::None;
     int flags = mapModifiers(event->modifiers());
-    if (event->button() == (Qt::LeftButton))
+    if (event->button() == Qt::LeftButton)
     {
         flags |= mb_LButton;
         type = ProcessEvent::LButtonDown;
     }
-    else if (event->button() == (Qt::MiddleButton))
+    else if (event->button() == Qt::MiddleButton)
     {
         flags |= mb_MButton;
         type = ProcessEvent::MButtonDown;
     }
-    else if (event->button() == (Qt::RightButton))
+    else if (event->button() == Qt::RightButton)
     {
         flags |= mb_RButton;
         type = ProcessEvent::RButtonDown;
     }
-    MouseEvent processEvent(type);
-    auto view = qobject_cast<QtOpenGLSceneWidget*>(watched);
-    if (view && view->viewport())
-        processEvent.SetViewport(view->viewport()->GetId());
 
+    std::shared_ptr<Viewport> ptrViewport = m_pListenerEvent->GetViewport();
+    MouseEvent processEvent(type);
     processEvent.SetFlags(flags);
-    processEvent.SetScreenPos(IntPoint(event->screenPos().x(), event->screenPos().y()));
-    processEvent.SetWindowPos(IntPoint(event->windowPos().x(), event->windowPos().y()));
-    processEvent.SetClientPos(IntPoint(event->localPos().x(), event->localPos().y()));
+    processEvent.SetViewport(ptrViewport != nullptr ? ptrViewport->GetId() : 0);
+    processEvent.SetScreenPos(PointI(event->screenPos().x(), event->screenPos().y()));
+    processEvent.SetWindowPos(PointI(event->windowPos().x(), event->windowPos().y()));
+    processEvent.SetClientPos(PointI(event->localPos().x(), event->localPos().y()));
     BaseApplication::GetInstance()->OnProcessSendEvent(m_pListenerEvent, &processEvent);
     return false;
 }
@@ -145,64 +143,57 @@ bool QtConverterEventListener::mousePressEvent(QMouseEvent* event, QObject* watc
 //-----------------------------------------------------------------------------
 //
 // ---
-bool QtConverterEventListener::mouseMoveEvent(QMouseEvent* event, QObject* watched)
+bool QtConverterEventListener::mouseMoveEvent(QMouseEvent* event)
 {
-    Q_ASSERT(m_pListenerEvent != nullptr);
-
     int flags = mapModifiers(event->modifiers());
-    if (event->buttons() & Qt::LeftButton)
+    if (event->buttons() == Qt::LeftButton)
         flags |= mb_LButton;
-    if (event->buttons() & Qt::MiddleButton)
+    if (event->buttons() == Qt::MiddleButton)
         flags |= mb_MButton;
-    if (event->buttons() & Qt::RightButton)
+    if (event->buttons() == Qt::RightButton)
         flags |= mb_RButton;
 
+    std::shared_ptr<Viewport> ptrViewport = m_pListenerEvent->GetViewport();
     MouseEvent processEvent(ProcessEvent::MouseMove);
-
-    auto view = qobject_cast<QtOpenGLSceneWidget*>(watched);
-    if (view && view->viewport())
-        processEvent.SetViewport(view->viewport()->GetId());
-
     processEvent.SetFlags(flags);
-    processEvent.SetScreenPos(IntPoint(event->screenPos().x(), event->screenPos().y()));
-    processEvent.SetWindowPos(IntPoint(event->windowPos().x(), event->windowPos().y()));
-    processEvent.SetClientPos(IntPoint(event->localPos().x(), event->localPos().y()));
+    processEvent.SetViewport(ptrViewport != nullptr ? ptrViewport->GetId() : 0);
+    processEvent.SetScreenPos(PointI(event->screenPos().x(), event->screenPos().y()));
+    processEvent.SetWindowPos(PointI(event->windowPos().x(), event->windowPos().y()));
+    processEvent.SetClientPos(PointI(event->localPos().x(), event->localPos().y()));
     BaseApplication::GetInstance()->OnProcessSendEvent(m_pListenerEvent, &processEvent);
-    return false;//m_pListenerEvent->OnEvent(&processEvent);
+    return false;
 }
 
 //-----------------------------------------------------------------------------
 //
 // ---
-bool QtConverterEventListener::mouseReleaseEvent(QMouseEvent* event, QObject* watched)
+bool QtConverterEventListener::mouseReleaseEvent(QMouseEvent* event)
 {
-    Q_ASSERT(m_pListenerEvent != nullptr);
     ProcessEvent::EventType type = ProcessEvent::None;
     int flags = mapModifiers(event->modifiers());
-    if (event->button() == (Qt::LeftButton))
+    if (event->button() == Qt::LeftButton)
     {
         flags |= mb_LButton;
         type = ProcessEvent::LButtonUp;
     }
-    else if (event->button() == (Qt::MiddleButton))
+    else if (event->button() == Qt::MiddleButton)
     {
         flags |= mb_MButton;
         type = ProcessEvent::MButtonUp;
     }
-    else if (event->button() == (Qt::RightButton))
+    else if (event->button() == Qt::RightButton)
     {
         flags |= mb_RButton;
         type = ProcessEvent::RButtonUp;
     }
-    MouseEvent processEvent(type);
-    auto view = qobject_cast<QtOpenGLSceneWidget*>(watched);
-    if (view && view->viewport())
-        processEvent.SetViewport(view->viewport()->GetId());
 
+    std::shared_ptr<Viewport> ptrViewport = m_pListenerEvent->GetViewport();
+    MouseEvent processEvent(type);
     processEvent.SetFlags(flags);
-    processEvent.SetScreenPos(IntPoint(event->screenPos().x(), event->screenPos().y()));
-    processEvent.SetWindowPos(IntPoint(event->windowPos().x(), event->windowPos().y()));
-    processEvent.SetClientPos(IntPoint(event->localPos().x(), event->localPos().y()));
+    processEvent.SetViewport(ptrViewport != nullptr ? ptrViewport->GetId() : 0);
+    processEvent.SetScreenPos(PointI(event->screenPos().x(), event->screenPos().y()));
+    processEvent.SetWindowPos(PointI(event->windowPos().x(), event->windowPos().y()));
+    processEvent.SetClientPos(PointI(event->localPos().x(), event->localPos().y()));
     BaseApplication::GetInstance()->OnProcessSendEvent(m_pListenerEvent, &processEvent);
     return false;
 }
@@ -210,36 +201,33 @@ bool QtConverterEventListener::mouseReleaseEvent(QMouseEvent* event, QObject* wa
 //-----------------------------------------------------------------------------
 //
 // ---
-bool QtConverterEventListener::mouseDoubleClickEvent(QMouseEvent* event, QObject* watched)
+bool QtConverterEventListener::mouseDoubleClickEvent(QMouseEvent* event)
 {
-    Q_ASSERT(m_pListenerEvent != nullptr);
-
     ProcessEvent::EventType type = ProcessEvent::None;
     int flags = mapModifiers(event->modifiers());
-    if (event->button() == (Qt::LeftButton))
+    if (event->button() == Qt::LeftButton)
     {
         flags |= mb_LButton;
         type = ProcessEvent::LButtonDblClk;
     }
-    else if (event->button() == (Qt::MiddleButton))
+    else if (event->button() == Qt::MiddleButton)
     {
         flags |= mb_MButton;
         type = ProcessEvent::MButtonDblClk;
     }
-    else if (event->button() == (Qt::RightButton))
+    else if (event->button() == Qt::RightButton)
     {
         flags |= mb_RButton;
         type = ProcessEvent::RButtonDblClk;
     }
-    MouseEvent processEvent(type);
-    auto view = qobject_cast<QtOpenGLSceneWidget*>(watched);
-    if (view && view->viewport())
-        processEvent.SetViewport(view->viewport()->GetId());
 
+    std::shared_ptr<Viewport> ptrViewport = m_pListenerEvent->GetViewport();
+    MouseEvent processEvent(type);
     processEvent.SetFlags(flags);
-    processEvent.SetScreenPos(IntPoint(event->screenPos().x(), event->screenPos().y()));
-    processEvent.SetWindowPos(IntPoint(event->windowPos().x(), event->windowPos().y()));
-    processEvent.SetClientPos(IntPoint(event->localPos().x(), event->localPos().y()));
+    processEvent.SetViewport(ptrViewport != nullptr ? ptrViewport->GetId() : 0);
+    processEvent.SetScreenPos(PointI(event->screenPos().x(), event->screenPos().y()));
+    processEvent.SetWindowPos(PointI(event->windowPos().x(), event->windowPos().y()));
+    processEvent.SetClientPos(PointI(event->localPos().x(), event->localPos().y()));
     BaseApplication::GetInstance()->OnProcessSendEvent(m_pListenerEvent, &processEvent);
     return false;
 }
@@ -247,13 +235,45 @@ bool QtConverterEventListener::mouseDoubleClickEvent(QMouseEvent* event, QObject
 //-----------------------------------------------------------------------------
 //
 // ---
-bool QtConverterEventListener::mouseWheelEvent(QWheelEvent* event, QObject* watched)
+bool QtConverterEventListener::mouseWheelEvent(QWheelEvent* event)
 {
     WheelEvent processEvent;
     int flags = mapModifiers(event->modifiers());
     processEvent.SetFlags(flags);
     processEvent.SetWheelDelta(event->delta());
-    processEvent.SetWindowPos(IntPoint(event->pos().x(), event->pos().y()));
+    processEvent.SetWindowPos(PointI(event->pos().x(), event->pos().y()));
+    BaseApplication::GetInstance()->OnProcessSendEvent(m_pListenerEvent, &processEvent);
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+//
+// ---
+bool QtConverterEventListener::mouseEnterEvent(QMouseEvent* event)
+{
+    std::shared_ptr<Viewport> ptrViewport = m_pListenerEvent->GetViewport();
+    MouseEvent processEvent(ProcessEvent::MouseEnter);
+    processEvent.SetFlags(0);
+    processEvent.SetViewport(ptrViewport != nullptr ? ptrViewport->GetId() : 0);
+    processEvent.SetScreenPos(PointI(event->screenPos().x(), event->screenPos().y()));
+    processEvent.SetWindowPos(PointI(event->windowPos().x(), event->windowPos().y()));
+    processEvent.SetClientPos(PointI(event->localPos().x(), event->localPos().y()));
+    BaseApplication::GetInstance()->OnProcessSendEvent(m_pListenerEvent, &processEvent);
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+//
+// ---
+bool QtConverterEventListener::mouseLeaveEvent(QMouseEvent* event)
+{
+    std::shared_ptr<Viewport> ptrViewport = m_pListenerEvent->GetViewport();
+    MouseEvent processEvent(ProcessEvent::MouseLeave);
+    processEvent.SetFlags(0);
+    processEvent.SetViewport(ptrViewport != nullptr ? ptrViewport->GetId() : 0);
+    processEvent.SetScreenPos(PointI(event->screenPos().x(), event->screenPos().y()));
+    processEvent.SetWindowPos(PointI(event->windowPos().x(), event->windowPos().y()));
+    processEvent.SetClientPos(PointI(event->localPos().x(), event->localPos().y()));
     BaseApplication::GetInstance()->OnProcessSendEvent(m_pListenerEvent, &processEvent);
     return false;
 }
@@ -269,21 +289,25 @@ bool QtConverterEventListener::eventFilter(QObject* watched, QEvent* event)
     switch (event->type())
     {
         case QEvent::KeyPress:
-            return keyPressEvent(static_cast<QKeyEvent*>(event), watched);
+            return keyPressEvent(static_cast<QKeyEvent*>(event));
         case QEvent::KeyRelease:
-            return keyReleaseEvent(static_cast<QKeyEvent*>(event), watched);
+            return keyReleaseEvent(static_cast<QKeyEvent*>(event));
         case QEvent::HoverMove:
-            return mouseHoverEvent(static_cast<QHoverEvent*>(event), watched);
+            return mouseHoverEvent(static_cast<QHoverEvent*>(event));
         case QEvent::MouseMove:
-            return mouseMoveEvent(static_cast<QMouseEvent*>(event), watched);
+            return mouseMoveEvent(static_cast<QMouseEvent*>(event));
         case QEvent::MouseButtonDblClick:
-            return mouseDoubleClickEvent(static_cast<QMouseEvent*>(event), watched);
+            return mouseDoubleClickEvent(static_cast<QMouseEvent*>(event));
         case QEvent::MouseButtonPress:
-            return mousePressEvent(static_cast<QMouseEvent*>(event), watched);
+            return mousePressEvent(static_cast<QMouseEvent*>(event));
         case QEvent::MouseButtonRelease:
-            return mouseReleaseEvent(static_cast<QMouseEvent*>(event), watched);
+            return mouseReleaseEvent(static_cast<QMouseEvent*>(event));
         case QEvent::Wheel:
-            return mouseWheelEvent(static_cast<QWheelEvent*>(event), watched);
+            return mouseWheelEvent(static_cast<QWheelEvent*>(event));
+        case QEvent::Enter:
+            return mouseEnterEvent(static_cast<QMouseEvent*>(event));
+        case QEvent::Leave:
+            return mouseLeaveEvent(static_cast<QMouseEvent*>(event));
         default:
             break;
     }
@@ -309,10 +333,10 @@ void QtOpenGLWidgetPrivate::initialize()
     VSN_P(QtOpenGLWidget);
     if (m_bInitialized)
         return;
+    qApp->setWindowIcon(QIcon(":/res/crystal.ico"));
     p.makeCurrent();
     m_pQContext = new QtOpenGLContextShell(&p, m_pSharedContainer);
     m_pQContext->MakeCurrent();
-//    m_pQContext->InitDefaultShader();
     m_bInitialized = true;
 }
 
@@ -440,6 +464,14 @@ void QtOpenGLWidget::initializeGL()
 //-----------------------------------------------------------------------------
 //
 // ---
+void QtOpenGLWidget::paintEvent(QPaintEvent* event)
+{
+    QOpenGLWidget::paintEvent(event);
+}
+
+//-----------------------------------------------------------------------------
+//
+// ---
 bool QtOpenGLWidget::event(QEvent* event)
 {
     VSN_D(QtOpenGLWidget);
@@ -484,6 +516,7 @@ public:
         : QtOpenGLWidgetPrivate(pSharedContainer)
         , m_ptrGraphicsView(std::make_shared<GraphicsView>(ptrEngine))
         , m_pEventFilter(nullptr)
+        , m_pAboutScene(nullptr)
         , m_bVsnInitialized(false)
     {
     }
@@ -500,6 +533,7 @@ public:
 public:
     GraphicsViewPtr m_ptrGraphicsView;
     QtConverterEventListener* m_pEventFilter;
+    QtAboutSceneWidget* m_pAboutScene;
     bool m_bVsnInitialized;
 };
 
@@ -520,8 +554,7 @@ void QtOpenGLSceneWidgetPrivate::initialize()
     p.setAttribute(Qt::WA_Hover, true);
 
     m_ptrGraphicsView->Initialize();
-    m_pEventFilter = new QtConverterEventListener(&p);
-    m_pEventFilter->setListenerEvent(m_ptrGraphicsView->GetGraphicsScene());
+    m_pEventFilter = new QtConverterEventListener(&p, m_ptrGraphicsView->GetGraphicsScene());
     Object::Connect(m_ptrGraphicsView.get(), &GraphicsView::OnViewModified, &p, &QtOpenGLWidget::repaintWidget);
 
     m_bVsnInitialized = true;
@@ -538,16 +571,15 @@ void QtOpenGLSceneWidgetPrivate::processActivation()
         std::vector<Process*> vector = pEssence->FindChildren<Process*>();
         for (auto it = vector.begin(); it != vector.end(); ++it)
         {
-			Process* pProcess = (*it);
+            Process* pProcess = (*it);
             pProcess->SetViewport(m_ptrGraphicsView->GetViewport().get());
-			bool bConnect = Object::Connect(pProcess, &Process::OnModified, &p, &QtOpenGLWidget::repaintWidget);
-			Q_ASSERT(bConnect != false);
-
-			if (PrAbstractCamera* pAbsProcess = vobject_cast<PrAbstractCamera*>(pProcess))
-			{
-				bConnect = Object::Connect(pAbsProcess, &PrAbstractCamera::OnCameraModified, &p, &QtOpenGLWidget::repaintWidget);
-				Q_ASSERT(bConnect != false);
-			}
+            bool bConnect = Object::Connect(pProcess, &Process::OnModified, &p, &QtOpenGLWidget::repaintWidget);
+            Q_ASSERT(bConnect != false);
+            if (PrAbstractCamera* pAbsProcess = vobject_cast<PrAbstractCamera*>(pProcess))
+            {
+                bConnect = Object::Connect(pAbsProcess, &PrAbstractCamera::OnCameraModified, &p, &QtOpenGLWidget::repaintWidget);
+                Q_ASSERT(bConnect != false);
+            }
         }
     }
 }
@@ -563,16 +595,12 @@ void QtOpenGLSceneWidgetPrivate::processDeactivation()
         std::vector<Process*> vector = pEssence->FindChildren<Process*>();
         for (auto it = vector.begin(); it != vector.end(); ++it)
         {
-			Process* pProcess = (*it);
+            Process* pProcess = (*it);
             pProcess->SetViewport(m_ptrGraphicsView->GetViewport().get());
-			bool bConnect = Object::Disconnect(pProcess, &Process::OnModified, &p, &QtOpenGLWidget::repaintWidget);
-//			Q_ASSERT(bConnect != false);
+            Object::Disconnect(pProcess, &Process::OnModified, &p, &QtOpenGLWidget::repaintWidget);
 
-			if (PrAbstractCamera* pAbsProcess = vobject_cast<PrAbstractCamera*>(pProcess))
-			{
-				bConnect = Object::Disconnect(pAbsProcess, &PrAbstractCamera::OnCameraModified, &p, &QtOpenGLWidget::repaintWidget);
-//				Q_ASSERT(bConnect != false);
-			}
+            if (PrAbstractCamera* pAbsProcess = vobject_cast<PrAbstractCamera*>(pProcess))
+                Object::Disconnect(pAbsProcess, &PrAbstractCamera::OnCameraModified, &p, &QtOpenGLWidget::repaintWidget);
         }
     }
 }
@@ -636,6 +664,15 @@ GraphicsViewPtr QtOpenGLSceneWidget::graphicsView() const
 }
 
 //-----------------------------------------------------------------------------
+//
+// ---
+void QtOpenGLSceneWidget::setAboutSceneWidget(QtAboutSceneWidget* pAboutScene)
+{
+    VSN_D(QtOpenGLSceneWidget);
+    d.m_pAboutScene = pAboutScene;
+}
+
+//-----------------------------------------------------------------------------
 // Вернуть указатель на основной источник света
 // ---
 Light* QtOpenGLSceneWidget::mainLight() const
@@ -682,6 +719,15 @@ void QtOpenGLSceneWidget::resizeGL(int w, int h)
     d.m_pQContext->MakeCurrent();
     if (OpenGLContextInterface::GetCurrentContext() && d.m_pQContext == OpenGLContextInterface::GetCurrentContext())
         d.m_ptrGraphicsView->DoResize(w, h);
+
+    if (d.m_pAboutScene != Q_NULLPTR)
+    {
+        const int margin = 10;
+        QRect rc = rect();
+        QSize sz = d.m_pAboutScene->sizeHint();
+        rc.setTopLeft(QPoint(rc.right() - sz.width() - margin, margin));
+        d.m_pAboutScene->setPosition(rc.topLeft());
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -692,20 +738,27 @@ void QtOpenGLSceneWidget::paintGL()
     VSN_D(QtOpenGLSceneWidget);
     if (d.m_pQContext == nullptr)
         return;
+
+    if (RenderStatistics::IsActivated())
+        RenderStatistics::ResetCounters();
+
     d.m_pQContext->MakeCurrent();
     d.m_ptrGraphicsView->DoRender();
     d.m_pQContext->DoneCurrent();
-}
 
+    if (d.m_pAboutScene != Q_NULLPTR)
+    {
+        QPainter painter(this);
+        d.m_pAboutScene->updateStatistics();
+        d.m_pAboutScene->paintStatistics(&painter);
+    }
+}
 
 //-----------------------------------------------------------------------------
 //
 // ---
 bool QtOpenGLSceneWidget::event(QEvent* event)
 {
-//#ifndef Q_OS_WIN
-//    BaseApplication::OnProcessSendPostedEvents();
-//#endif /*Q_OS_WIN*/
     return QtOpenGLWidget::event(event);
 }
 
@@ -727,7 +780,7 @@ void QtOpenGLSceneWidget::enterEvent(QEvent* event)
  void QtOpenGLSceneWidget::leaveEvent(QEvent* event)
 {
      VSN_D(QtOpenGLSceneWidget);
-     QtOpenGLWidget::enterEvent(event);
+     QtOpenGLWidget::leaveEvent(event);
      d.processDeactivation();
 }
 
@@ -794,24 +847,43 @@ void QtOpenGLSceneWidget::closeEvent(QCloseEvent* event)
 //-----------------------------------------------------------------------------
 // Creating processes to control the camera.
 // ---
-QT_FUNC(void) createProcessesCameraControls(Node* pParent, ProcessTypes prType)
+QT_FUNC(void) createProcessesCameraControls(QtOpenGLSceneWidget* pGLWidget, ProcessTypes prType)
 {
+    Essence* pEssence = pGLWidget->graphicsEngine()->GetTopEssence();
+    Q_ASSERT(pEssence != nullptr);
+
     // Create and add process Orbit
-    if (prType.checkFlag(pt_Orbit))
+    if (prType.CheckFlag(pt_Orbit))
     {
-        PrCameraOrbit* pProcess = new PrCameraOrbit(pParent);
+        PrCameraOrbit* pProcess = new PrCameraOrbit(pEssence);
+        pProcess->SetGraphicsScene(pGLWidget->graphicsView()->GetGraphicsScene());
+        pProcess->SetMouseButtonsActivate({ VSN::mb_RButton });
+    }
+    // Create and add process Rotate
+    if (prType.CheckFlag(pt_Rotate))
+    {
+        PrCameraRotate* pProcess = new PrCameraRotate(pGLWidget->graphicsView().get(), pEssence);
+        pProcess->SetGraphicsScene(pGLWidget->graphicsView()->GetGraphicsScene());
+        pProcess->SetMouseButtonsActivate({ VSN::mb_RButton });
+    }
+    // Create and add process Rotate
+    if (prType.CheckFlag(pt_ComplexRotation))
+    {
+        PrCameraComplexRotation* pProcess = new PrCameraComplexRotation(pGLWidget->graphicsView().get(), pEssence);
+        pProcess->SetGraphicsScene(pGLWidget->graphicsView()->GetGraphicsScene());
         pProcess->SetMouseButtonsActivate({ VSN::mb_RButton });
     }
     // Create and add process Pan
-    if (prType.checkFlag(pt_Pan))
+    if (prType.CheckFlag(pt_Pan))
     {
-        PrCameraPan* pProcess = new PrCameraPan(pParent);
+        PrCameraPan* pProcess = new PrCameraPan(pEssence);
+        pProcess->SetGraphicsScene(pGLWidget->graphicsView()->GetGraphicsScene());
         pProcess->SetMouseButtonsActivate({ VSN::mb_MButton });
     }
     // Create and add process Zoom
-    if (prType.checkFlag(pt_Zoom))
+    if (prType.CheckFlag(pt_Zoom))
     {
-        PrCameraZoom* pProcess = new PrCameraZoom(pParent);
+        PrCameraZoom* pProcess = new PrCameraZoom(pGLWidget->graphicsView()->GetGraphicsScene(), pEssence);
         VSN_UNUSED(pProcess);
     }
 }
@@ -822,7 +894,6 @@ QT_FUNC(void) createProcessesCameraControls(Node* pParent, ProcessTypes prType)
 QT_FUNC(void) setSurfaceFormat()
 {
     QSurfaceFormat format;
-
 #ifdef QT_OPENGL_ES_2
     format.setRenderableType(QSurfaceFormat::OpenGLES);
 #else
@@ -832,62 +903,50 @@ QT_FUNC(void) setSurfaceFormat()
 //        format.setProfile(QSurfaceFormat::CoreProfile);
     }
 #endif
-
     format.setDepthBufferSize(24);
     format.setSamples(4);
     format.setStencilBufferSize(8);
-//    format.setSwapInterval(0);
+    format.setSwapInterval(0);
     QSurfaceFormat::setDefaultFormat(format);
 }
 
 //-----------------------------------------------------------------------------
-// Лицензия получена
+// License check
 // ---
-QT_FUNC(bool) isExistLicense()
-{
-    return activateLicense();
-}
-
 QT_FUNC(bool) activateLicense()
 {
-    std::string key = strKey;
-    std::string signature = strSignature;
-    qDebug() << QString::fromStdString(key);
-    qDebug() << QString::fromStdString(signature);
+    VSN_ASSERT_X(QApplication::instance() != nullptr, "QtVision::activateLicense()", "QtVision::activateLicense() should be called after QApplication created!");
 
     QProcessEnvironment procEnv = QProcessEnvironment::systemEnvironment();
     QString envKey = procEnv.value("C3DKey");
     QString envSignature = procEnv.value("C3Dsignature");
     if (!envKey.isEmpty() && !envSignature.isEmpty())
     {
-        key = envKey.toStdString();
-        signature = envSignature.toStdString();
+        const std::string key = envKey.toStdString();
+        const std::string signature = envSignature.toStdString();
+
+        ::EnableMathModules(key.c_str(), static_cast<int>(key.length()), signature.c_str(), static_cast<int>(signature.length()));
     }
 
-    ::EnableMathModules(key.c_str(), static_cast<int>(key.length()), signature.c_str(), static_cast<int>(signature.length()));
     if (!IsMathVisionEnable())
     {
-        QMessageBox::warning(nullptr, QObject::tr("Warning"), QObject::tr("The evaluation period has expired. For a new license, please contact C3D Labs."));
-        return false;
+        QtVision::LicenseWnd licenseWnd;
+        return licenseWnd.Activate();
     }
+
     return true;
 }
 
-QT_FUNC(bool) checkLicenseWithInput()
+/// \ru Позиционирование главного окна. \en Positioning the main window.
+QT_FUNC(void) setWindowPosition(QWidget& widget)
 {
-    if (!QtVision::isExistLicense()) {
-        QString k = QInputDialog::getText(Q_NULLPTR, QString("License"), QString("Add key:"));
-        strKey = k.toStdString();
-        QString s = QInputDialog::getText(Q_NULLPTR, QString("License"), QString("Add signature:"));
-        strSignature = s.toStdString();
-    }
-    return QtVision::activateLicense();
-}
-
-QT_FUNC(bool) setLicenseKeyValues(QString key, QString sign) {
-    strKey = key.toStdString();
-    strSignature = sign.toStdString();
-    return QtVision::activateLicense();
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    const QRect availableGeometry = widget.screen()->availableGeometry();
+#else
+    const QRect availableGeometry = QApplication::desktop()->availableGeometry();
+#endif
+    widget.resize(QSize(2 * availableGeometry.width() / 3, 2 * availableGeometry.height() / 3));
+    widget.move(QPoint((availableGeometry.width() - widget.width()) / 2, (availableGeometry.height() - widget.height()) / 2));
 }
 
 } // namespace QtVision

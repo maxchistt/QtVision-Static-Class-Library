@@ -185,6 +185,8 @@ public:
     void glVertexAttrib4f(GLuint indx, GLfloat x, GLfloat y, GLfloat z, GLfloat w) override;
     void glVertexAttrib4fv(GLuint indx, const GLfloat* values) override;
     void glVertexAttribPointer(GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* ptr) override;
+
+    void glDebugMessageCallback(GLDEBUGPROC callback, const void *userParam) override;
 private:
     QOpenGLFunctions* m_pQtFunctions;
 };

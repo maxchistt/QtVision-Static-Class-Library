@@ -10,6 +10,28 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\qt_aboutscenewidget.cpp" />
+    <ClCompile Include="src\qt_licensewnd.cpp" />
+    <ClCompile Include="src\qt_openglcontext.cpp" />
+    <ClCompile Include="src\qt_openglwidget.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="src\qt_openglwidget.qrc" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Include\qt_aboutscenewidget.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Include\qt_licensewnd.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\qt_openglcontext.h" />
+    <ClInclude Include="Include\qt_openglwidgetprivate.h" />
+    <ClInclude Include="Include\qt_resstream.h" />
+    <ClInclude Include="Include\qt_visiondef.h" />
+    <QtMoc Include="Include\qt_openglwidget.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{24FBAF90-E7BC-4DF9-892B-9882E21A1CD0}</ProjectGuid>
     <Keyword>QtVS_v304</Keyword>
@@ -122,17 +144,6 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="src\qt_openglcontext.cpp" />
-    <ClCompile Include="src\qt_openglwidget.cpp" />
-    <ClInclude Include="Include\lisencekey.h" />
-    <ClInclude Include="Include\qtvision_global.h" />
-    <ClInclude Include="Include\qt_openglcontext.h" />
-    <QtMoc Include="Include\qt_openglwidget.h" />
-    <ClInclude Include="Include\qt_openglwidgetprivate.h" />
-    <ClInclude Include="Include\qt_resstream.h" />
-    <ClInclude Include="Include\qt_visiondef.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
     <Import Project="$(QtMsBuild)\qt.targets" />
