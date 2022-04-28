@@ -9,6 +9,10 @@
 #include <mesh.h>
 #include <vsn_labelgeometry.h>
 
+#include <vsn_colorarray.h>
+#include <vsn_polygongeometry.h>
+
+
 VSN_USE_NAMESPACE
 
 class Example : public QMainWindow
@@ -21,8 +25,7 @@ public:
 private:
 	QtVision::QtOpenGLSceneWidget* glWidget = Q_NULLPTR;
 	Ui::ExampleClass ui;
-	void setupWindowSize();
-	void prepareTestScene();
+	void prepareTestSceneBackground();
 private slots:
 	void makeTestSceneSlot();
 };

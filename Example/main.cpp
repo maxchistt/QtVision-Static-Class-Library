@@ -1,7 +1,8 @@
 #include "Example.h"
+
+#include <QApplication>
 #include <QtWidgets/QApplication>
 
-#include <qt_openglwidget.h>
 #include <qlogging.h>
 #include <last.h>
 
@@ -14,12 +15,13 @@ int main(int argc, char* argv[])
 #endif
 
 	QApplication app(argc, argv);
-
-	if (!QtVision::checkLicenseWithInput())return 0;
-
-	Application vapp;
 	app.setApplicationName("Basics geometries");
 	app.setOrganizationName("C3DLabs");
+
+	if (!QtVision::activateLicense())
+		return 0;
+
+	Application vapp;
 
 	Example mainWindow;
 	mainWindow.show();

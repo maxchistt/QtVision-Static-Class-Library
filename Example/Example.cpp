@@ -1,24 +1,28 @@
 #include "Example.h"
 
-static void createShapeSegment(GeometryRep* pShapeRep, const MbVector3D& vecMove, const Color& color, SceneSegment* pParent)
+static NodeKey createShapeSegment(GeometryRep* pShapeRep, const MbVector3D& vecMove, const Color& color, SceneSegment* pParent)
 {
 	SceneSegment* pSegment = new SceneSegment(pShapeRep, pParent);
 	pSegment->SetColorPresentationMaterial(color);
-	MbMatrix3D relativeMatrix; relativeMatrix.Move(vecMove);
-	pSegment->CreateRelativeMatrix(relativeMatrix);
+	pSegment->GetTransform().Move(vecMove);
+	return pSegment->GetUniqueKey();
 }
 
 Example::Example(QWidget* parent)
 	: QMainWindow(parent)
 {
 	ui.setupUi(this);
-	setupWindowSize();
-	QtVision::setSurfaceFormat();
+	QtVision::setWindowPosition(*this);
 
-	glWidget = new QtVision::QtOpenGLSceneWidget(this);
+	GraphicsSceneEnginePtr ptrEngine = std::make_shared<GraphicsSceneEngine>();
+	OpenGLContextContainer* pContextContainer = new OpenGLContextContainer;
+	QtVision::setSurfaceFormat();
+	glWidget = new QtVision::QtOpenGLSceneWidget(ptrEngine, pContextContainer, this);
 	setCentralWidget(glWidget);
 
-	prepareTestScene();
+	QtVision::createProcessesCameraControls(glWidget);
+
+	prepareTestSceneBackground();
 
 	connect(ui.draw_Action, &QAction::triggered, this, &Example::makeTestSceneSlot);
 }
@@ -37,27 +41,19 @@ void Example::makeTestSceneSlot()
 	// 4 Rectangle
 	::createShapeSegment(SceneGenerator::Instance()->CreateRectangle(2.5, 2.5), MbVector3D(0.0, -4.0, 0.0), Color(0, 100, 180), pTopSegment);
 	// 5 Sphere
-	::createShapeSegment(SceneGenerator::Instance()->CreateSphere(1.5), MbVector3D(-5.0, -4.0, 0.0), Color(100, 100, 180), pTopSegment);
-	// 5 Rectangle
+	NodeKey key = ::createShapeSegment(SceneGenerator::Instance()->CreateSphere(1.5f, 15.0f), MbVector3D(-5.0, -4.0, 0.0), Color(100, 100, 180), pTopSegment);
+#if 0
+	RenderObject* obj = glWidget.sceneContent()->GetContainer()->GetObjectById(key);
+	obj->SetPolygonMode(bm_Front_and_Back, pm_Point);
+#endif
+	// 6 Rectangle
 	::createShapeSegment(SceneGenerator::Instance()->CreateRectangle(2.5, 2.5), MbVector3D(5.0, 4.0, 0.0), Color(200, 100, 180), pTopSegment);
 
-	auto pLabel = new LabelGeometry();
-	pLabel->Init(WString("text"), MbPlacement3D(MbVector3D::xAxis, MbVector3D::yAxis, {}));
-	pLabel->SetFontSize(22);
-	new SceneSegment(new GeometryRep(pLabel), pTopSegment);
-
-	glWidget->sceneContent()->GetContainer()->SetUseVertexBufferObjects(true);
-	QtVision::createProcessesCameraControls(glWidget->graphicsEngine()->GetTopEssence());
-	glWidget->viewport()->ZoomToFit(glWidget->sceneContent()->GetBoundingBox());
+	// fit scene
+	glWidget->ZoomToFit();
 }
 
-void Example::setupWindowSize()
-{
-	QRect geom = QApplication::desktop()->availableGeometry();
-	this->resize(2 * geom.width() / 3, 2 * geom.height() / 3);
-}
-
-void Example::prepareTestScene()
+void Example::prepareTestSceneBackground()
 {
 	glWidget->mainLight()->SetDoubleSided(true);
 	glWidget->viewport()->SetBackgroundColour(Color(74, 74, 74));
