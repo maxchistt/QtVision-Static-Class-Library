@@ -48,6 +48,11 @@
    <property name="toolTip">
     <string>Make test C3D scene</string>
    </property>
+   <property name="font">
+    <font>
+     <family>Segoe UI Black</family>
+    </font>
+   </property>
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
