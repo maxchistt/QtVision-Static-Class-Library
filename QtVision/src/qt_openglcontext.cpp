@@ -1,4 +1,4 @@
-﻿#include "qt_openglcontext.h"
+﻿#include <qt_openglcontext.h>
 
 #include <QtGui/QOpenGLContext>
 #include <QtGui/QOpenGLFunctions>
@@ -181,6 +181,7 @@ void QtOpenGLFunctionList::glVertexAttrib3fv(GLuint indx, const GLfloat* values)
 void QtOpenGLFunctionList::glVertexAttrib4f(GLuint indx, GLfloat x, GLfloat y, GLfloat z, GLfloat w) { m_pQtFunctions->glVertexAttrib4f(indx, x, y, z, w); }
 void QtOpenGLFunctionList::glVertexAttrib4fv(GLuint indx, const GLfloat* values) { m_pQtFunctions->glVertexAttrib4fv(indx, values); }
 void QtOpenGLFunctionList::glVertexAttribPointer(GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* ptr) { m_pQtFunctions->glVertexAttribPointer(indx, size, type, normalized, stride, ptr); }
+void QtOpenGLFunctionList::glDebugMessageCallback(GLDEBUGPROC callback, const void *userParam) { /*m_pQtFunctions->glDebugMessageCallback(callback, userParam);*/ };
 
 
 //----------------------------------------------------------------------------
@@ -412,6 +413,8 @@ QtOpenGLContext::~QtOpenGLContext()
 // ---
 bool QtOpenGLContext::MakeCurrent()
 {
+    OpenGLContextInterface::MakeCurrent();
+
     if (QOpenGLContext::makeCurrent(m_pWindow))
     {
         m_pContextInterface = static_cast<OpenGLContextInterface*>((QtOpenGLContext*)QOpenGLContext::currentContext());
@@ -424,7 +427,7 @@ bool QtOpenGLContext::MakeCurrent()
         m_pFuncs->Update(functions());
         m_pExFuncs->Update(extraFunctions());
 
-        return true;
+        return OpenGLContextInterface::MakeCurrent();
     }
     return false;
 }
@@ -434,6 +437,7 @@ bool QtOpenGLContext::MakeCurrent()
 // ---
 void QtOpenGLContext::DoneCurrent()
 {
+    OpenGLContextInterface::DoneCurrent();
     QOpenGLContext::doneCurrent();
     m_pContextInterface = static_cast<OpenGLContextInterface*>((QtOpenGLContext*)QOpenGLContext::currentContext());
 }
@@ -555,7 +559,8 @@ bool QtOpenGLContextShell::MakeCurrent()
 
     m_pFuncs->Update(m_pWidget->context()->functions());
     m_pExFuncs->Update(m_pWidget->context()->extraFunctions());
-    return true;
+
+    return OpenGLContextInterface::MakeCurrent();
 }
 
 //----------------------------------------------------------------------------
@@ -563,6 +568,8 @@ bool QtOpenGLContextShell::MakeCurrent()
 // ---
 void QtOpenGLContextShell::DoneCurrent()
 {
+    OpenGLContextInterface::DoneCurrent();
+
     if (QOpenGLContext::currentContext() != nullptr)
         return;
     if (m_pWidget)

@@ -8,8 +8,8 @@
 #ifndef __OPENGLWIDGETPRIVATE_H
 #define __OPENGLWIDGETPRIVATE_H
 
-#include "qt_openglwidget.h"
-#include "qt_visiondef.h"
+#include <qt_openglwidget.h>
+#include <qt_visiondef.h>
 
 VSN_BEGIN_NAMESPACE
 
@@ -38,27 +38,26 @@ class QT_CLASS QtConverterEventListener : public QObject
 {
 public:
     /// \ru Конструктор по умолчанию. \en Default constructor. \~
-    explicit QtConverterEventListener(QObject* pParent);
+    explicit QtConverterEventListener(QObject* pParent, GraphicsScene* pListenerEvent);
     /// \ru Деструктор. \en Destructor. \~
     virtual ~QtConverterEventListener();
-public:
-    /// \ru Установить слушателя событий. \en Sets event listener.
-    void setListenerEvent(Object* pListenerEvent);
 protected:
-    bool keyPressEvent(QKeyEvent* event, QObject* watched);
-    bool keyReleaseEvent(QKeyEvent* event, QObject* watched);
-    bool mouseHoverEvent(QHoverEvent* event, QObject* watched);
-    bool mousePressEvent(QMouseEvent* event, QObject* watched);
-    bool mouseMoveEvent(QMouseEvent* event, QObject* watched);
-    bool mouseReleaseEvent(QMouseEvent* event, QObject* watched);
-    bool mouseDoubleClickEvent(QMouseEvent* event, QObject* watched);
-    bool mouseWheelEvent(QWheelEvent* event, QObject* watched);
+    bool keyPressEvent(QKeyEvent* event);
+    bool keyReleaseEvent(QKeyEvent* event);
+    bool mouseHoverEvent(QHoverEvent* event);
+    bool mousePressEvent(QMouseEvent* event);
+    bool mouseMoveEvent(QMouseEvent* event);
+    bool mouseReleaseEvent(QMouseEvent* event);
+    bool mouseDoubleClickEvent(QMouseEvent* event);
+    bool mouseWheelEvent(QWheelEvent* event);
+    bool mouseEnterEvent(QMouseEvent* event);
+    bool mouseLeaveEvent(QMouseEvent* event);
 protected:
     /// \ru Перегрузка для внутренних работ. \en Overload for internal workings.
     virtual bool eventFilter(QObject* watched, QEvent* event);
     virtual void timerEvent(QTimerEvent* event);
 protected:
-    Object* m_pListenerEvent;
+    GraphicsScene* m_pListenerEvent;
     int m_idleTimerId;
 };
 
