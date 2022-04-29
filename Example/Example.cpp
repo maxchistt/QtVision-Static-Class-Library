@@ -1,5 +1,7 @@
 #include "Example.h"
 
+double zOffset = 0.0;
+
 static NodeKey createShapeSegment(GeometryRep* pShapeRep, const MbVector3D& vecMove, const Color& color, SceneSegment* pParent)
 {
 	SceneSegment* pSegment = new SceneSegment(pShapeRep, pParent);
@@ -33,24 +35,27 @@ void Example::makeTestSceneSlot()
 	Q_ASSERT(pTopSegment != nullptr);
 
 	// 1 Cone
-	::createShapeSegment(SceneGenerator::Instance()->CreateCone(1.5, 1.5), MbVector3D(0.0, 4.0, -1.5), Color(255, 0, 0), pTopSegment);
+	::createShapeSegment(SceneGenerator::Instance()->CreateCone(1.5, 1.5), MbVector3D(0.0, 4.0, -1.5 + zOffset), Color(255, 0, 0), pTopSegment);
 	// 2 Cylinder
-	::createShapeSegment(SceneGenerator::Instance()->CreateCylinder(1.5, 1.5), MbVector3D(-5.0, 4.0, -1.5), Color(0, 190, 0), pTopSegment);
+	::createShapeSegment(SceneGenerator::Instance()->CreateCylinder(1.5, 1.5), MbVector3D(-5.0, 4.0, -1.5 + zOffset), Color(0, 190, 0), pTopSegment);
 	// 3 Box
-	::createShapeSegment(SceneGenerator::Instance()->CreateBox(2.5, 2.5, 2.5), MbVector3D(5.0, -4.0, 0.0), Color(0, 0, 180), pTopSegment);
+	::createShapeSegment(SceneGenerator::Instance()->CreateBox(2.5, 2.5, 2.5), MbVector3D(5.0, -4.0, 0.0 + zOffset), Color(0, 0, 180), pTopSegment);
 	// 4 Rectangle
-	::createShapeSegment(SceneGenerator::Instance()->CreateRectangle(2.5, 2.5), MbVector3D(0.0, -4.0, 0.0), Color(0, 100, 180), pTopSegment);
+	::createShapeSegment(SceneGenerator::Instance()->CreateRectangle(2.5, 2.5), MbVector3D(0.0, -4.0, 0.0 + zOffset), Color(0, 100, 180), pTopSegment);
 	// 5 Sphere
-	NodeKey key = ::createShapeSegment(SceneGenerator::Instance()->CreateSphere(1.5f, 15.0f), MbVector3D(-5.0, -4.0, 0.0), Color(100, 100, 180), pTopSegment);
+	NodeKey key = ::createShapeSegment(SceneGenerator::Instance()->CreateSphere(1.5f, 15.0f), MbVector3D(-5.0, -4.0, 0.0 + zOffset), Color(100, 100, 180), pTopSegment);
 #if 0
 	RenderObject* obj = glWidget.sceneContent()->GetContainer()->GetObjectById(key);
 	obj->SetPolygonMode(bm_Front_and_Back, pm_Point);
 #endif
 	// 6 Rectangle
-	::createShapeSegment(SceneGenerator::Instance()->CreateRectangle(2.5, 2.5), MbVector3D(5.0, 4.0, 0.0), Color(200, 100, 180), pTopSegment);
+	::createShapeSegment(SceneGenerator::Instance()->CreateRectangle(2.5, 2.5), MbVector3D(5.0, 4.0, 0.0 + zOffset), Color(200, 100, 180), pTopSegment);
 
 	// fit scene
 	glWidget->ZoomToFit();
+
+	// offset on next draw counter
+	zOffset += 5;
 }
 
 void Example::prepareTestSceneBackground()
