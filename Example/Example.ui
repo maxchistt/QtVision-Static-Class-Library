@@ -38,19 +38,37 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="draw_Action"/>
+   <addaction name="drawBase_Action"/>
+   <addaction name="drawMath_Action"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="draw_Action">
+  <action name="drawBase_Action">
    <property name="text">
-    <string>Draw scene</string>
+    <string>Draw base geoms</string>
    </property>
    <property name="toolTip">
-    <string>Make test C3D scene</string>
+    <string>Make test C3D base geoms scene</string>
    </property>
    <property name="font">
     <font>
      <family>Segoe UI Black</family>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+  </action>
+  <action name="drawMath_Action">
+   <property name="text">
+    <string>Draw math geoms</string>
+   </property>
+   <property name="toolTip">
+    <string>Make test C3D math geoms scene</string>
+   </property>
+   <property name="font">
+    <font>
+     <family>Segoe UI Black</family>
+     <weight>75</weight>
+     <bold>true</bold>
     </font>
    </property>
   </action>
