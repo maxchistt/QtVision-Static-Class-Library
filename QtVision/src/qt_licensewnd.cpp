@@ -10,6 +10,8 @@
 
 #include <last.h>
 
+#define C3DKEY  "<C3DLicenseKey>"
+#define C3DSIGN "<C3DSignature>"
 
 VSN_USE_NAMESPACE
 using namespace QtVision;
@@ -39,8 +41,12 @@ LicenseWnd::~LicenseWnd()
 // ---
 bool LicenseWnd::Activate()
 {
-    std::string key;
-    std::string signature;
+    std::string key = C3DKEY;
+    std::string signature = C3DSIGN;
+
+    if (ApplyKey(key, signature))
+        return true;
+
     if (LoadKey(key, signature) && ApplyKey(key, signature))
         return true;
 
