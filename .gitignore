@@ -3,6 +3,14 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Cmake
+[Bb]uild/
+[Oo]ut/
+[Ee]xport/
+[Ee]xport[Dd][Ll][Ll]/
+[Ee]xport[Ll]ib/
+[Ee]xport[Ll]ib[Dd][Ll][Ll]/
+
 # User-specific files
 *.rsuser
 *.suo
